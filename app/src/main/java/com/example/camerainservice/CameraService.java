@@ -3,8 +3,11 @@ package com.example.camerainservice;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -12,6 +15,8 @@ import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class CameraService extends Service {
@@ -52,6 +57,38 @@ public class CameraService extends Service {
                     @Override
                     public void onPictureTaken(byte[] data, Camera camera) {
                         Log.i("SERVICE", "JPEG received " + data.length);
+                        File file = new File(Environment.getExternalStorageDirectory(), "CameraService");
+                        try {
+                            file.mkdir();
+                        }
+                        catch (Exception ex) {
+                            Log.e("SERVICE", "mkdir failed", ex);
+                        }
+                        file = new File(file, "qqq.jpg");
+                        try {
+                            FileOutputStream fileOutputStream = new FileOutputStream(file);
+                            fileOutputStream.write(data);
+                            fileOutputStream.close();
+                            Log.i("SERVICE", "write complete");
+                        }
+                        catch (Exception ex) {
+                            Log.e("SERVICE", "write failed");
+                        }
+
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                        file = new File(Environment.getExternalStorageDirectory(), "CameraService");
+                        file = new File(file, "qqqq.jpg");
+                        try {
+                            FileOutputStream fileOutputStream = new FileOutputStream(file);
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
+                            fileOutputStream.close();
+                            Log.i("SERVICE", "write from bitmap complete");
+                        }
+                        catch (Exception ex) {
+                            Log.e("SERVICE", "write from bitmap failed", ex);
+                        }
+
+
                         stopPreview();
                     }
                 });
