@@ -16,6 +16,8 @@ import java.io.IOException;
 
 public class CameraService extends Service {
     private Camera camera;
+    private SurfaceView mview;
+    private WindowManager wm;
 
     public CameraService() {
     }
@@ -28,8 +30,8 @@ public class CameraService extends Service {
 
     void startPreview() {
         camera = Camera.open(0);
-        SurfaceView mview = new SurfaceView(this);
-        WindowManager wm = (WindowManager) this.getSystemService(Context.WINDOW_SERVICE);
+        mview = new SurfaceView(this);
+        wm = (WindowManager) this.getSystemService(Context.WINDOW_SERVICE);
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
@@ -46,6 +48,13 @@ public class CameraService extends Service {
                     e.printStackTrace();
                 }
                 camera.startPreview();
+                camera.takePicture(null, null, new Camera.PictureCallback() {
+                    @Override
+                    public void onPictureTaken(byte[] data, Camera camera) {
+                        Log.i("SERVICE", "JPEG received " + data.length);
+                        stopPreview();
+                    }
+                });
             }
 
             @Override
@@ -62,10 +71,17 @@ public class CameraService extends Service {
         mview.setZOrderOnTop(true);
     }
 
+    private void stopPreview() {
+        camera.stopPreview();
+        camera.release();
+        wm.removeView(mview);
+    }
+
     @Override
     public void onCreate() {
         Log.i("SERVICE", "onCreate()");
     }
+
     @Override
     public IBinder onBind(Intent intent) {
         throw new UnsupportedOperationException("Not implemented");
