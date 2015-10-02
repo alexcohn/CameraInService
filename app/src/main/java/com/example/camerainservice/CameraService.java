@@ -19,7 +19,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class CameraService extends Service {
+public class CameraService extends Service implements Runnable {
+    private static final long TAKE_PICTURE_DELAY = 100; // millisec
     private Camera camera;
     private SurfaceView mview;
     private WindowManager wm;
@@ -53,45 +54,7 @@ public class CameraService extends Service {
                     e.printStackTrace();
                 }
                 camera.startPreview();
-                camera.takePicture(null, null, new Camera.PictureCallback() {
-                    @Override
-                    public void onPictureTaken(byte[] data, Camera camera) {
-                        Log.i("SERVICE", "JPEG received " + data.length);
-                        File file = new File(Environment.getExternalStorageDirectory(), "CameraService");
-                        try {
-                            file.mkdir();
-                        }
-                        catch (Exception ex) {
-                            Log.e("SERVICE", "mkdir failed", ex);
-                        }
-                        file = new File(file, "qqq.jpg");
-                        try {
-                            FileOutputStream fileOutputStream = new FileOutputStream(file);
-                            fileOutputStream.write(data);
-                            fileOutputStream.close();
-                            Log.i("SERVICE", "write complete");
-                        }
-                        catch (Exception ex) {
-                            Log.e("SERVICE", "write failed");
-                        }
-
-                        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                        file = new File(Environment.getExternalStorageDirectory(), "CameraService");
-                        file = new File(file, "qqqq.jpg");
-                        try {
-                            FileOutputStream fileOutputStream = new FileOutputStream(file);
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
-                            fileOutputStream.close();
-                            Log.i("SERVICE", "write from bitmap complete");
-                        }
-                        catch (Exception ex) {
-                            Log.e("SERVICE", "write from bitmap failed", ex);
-                        }
-
-
-                        stopPreview();
-                    }
-                });
+                mview.postDelayed(CameraService.this, TAKE_PICTURE_DELAY);
             }
 
             @Override
@@ -112,6 +75,49 @@ public class CameraService extends Service {
         camera.stopPreview();
         camera.release();
         wm.removeView(mview);
+    }
+
+    @Override
+    public void run() {
+        camera.takePicture(null, null, new Camera.PictureCallback() {
+            @Override
+            public void onPictureTaken(byte[] data, Camera camera) {
+                Log.i("SERVICE", "JPEG received " + data.length);
+                File file = new File(Environment.getExternalStorageDirectory(), "CameraService");
+                try {
+                    file.mkdir();
+                }
+                catch (Exception ex) {
+                    Log.e("SERVICE", "mkdir failed", ex);
+                }
+                file = new File(file, "qqq.jpg");
+                try {
+                    FileOutputStream fileOutputStream = new FileOutputStream(file);
+                    fileOutputStream.write(data);
+                    fileOutputStream.close();
+                    Log.i("SERVICE", "write complete");
+                }
+                catch (Exception ex) {
+                    Log.e("SERVICE", "write failed");
+                }
+
+                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                file = new File(Environment.getExternalStorageDirectory(), "CameraService");
+                file = new File(file, "qqqq.jpg");
+                try {
+                    FileOutputStream fileOutputStream = new FileOutputStream(file);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
+                    fileOutputStream.close();
+                    Log.i("SERVICE", "write from bitmap complete");
+                }
+                catch (Exception ex) {
+                    Log.e("SERVICE", "write from bitmap failed", ex);
+                }
+
+
+                stopPreview();
+            }
+        });
     }
 
     @Override
